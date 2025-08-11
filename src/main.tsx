@@ -1,7 +1,8 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import {StrictMode} from 'react'
+import {createRoot} from 'react-dom/client'
 import App from './App'
 import './index.css'
+import MaintenanceGate from './components/MaintenanceGate'
 
 const container = document.getElementById('root')
 if (!container) {
@@ -10,6 +11,8 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <MaintenanceGate>
+      <App/>
+    </MaintenanceGate>
   </StrictMode>,
 )
