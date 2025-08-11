@@ -5,7 +5,7 @@
 ```bash
 # create project
 npm create vite@latest tech-blog -- --template react-ts
-cd tech-blog
+cd react-blog
 npm install
 
 # package install
