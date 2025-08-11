@@ -1,24 +1,24 @@
-import { type FC, useState, useMemo, Suspense, useTransition } from 'react'
-import { ArrowRight } from 'lucide-react'
+import {type FC, useState, useMemo, Suspense, useTransition, useEffect} from 'react'
+import {ArrowRight} from 'lucide-react'
 import Header from './components/Header'
 import SearchBox from './components/SearchBox'
 import CategoryFilter from './components/CategoryFilter'
 import PostCard from './components/PostCard'
 import ArticleDetail from './components/ArticleDetail'
 import LoadingSpinner from './components/LoadingSpinner'
-import { useDarkMode } from './hooks/useDarkMode'
-import { useSearch } from './hooks/useSearch'
-import { useNavigation } from './hooks/useNavigation'
-import { posts, categories } from './data/posts'
-import type { Post } from './types'
+import {useDarkMode} from './hooks/useDarkMode'
+import {useSearch} from './hooks/useSearch'
+import {useNavigation} from './hooks/useNavigation'
+import {posts, categories} from './data/posts'
+import type {Post} from './types'
 
 const App: FC = () => {
   const [darkMode, toggleDarkMode] = useDarkMode()
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [isPending, startTransition] = useTransition()
 
-  const { query, setQuery, results, isSearching } = useSearch(posts)
-  const { currentView, selectedPost, showPostDetail, showPostList } = useNavigation()
+  const {query, setQuery, results, isSearching} = useSearch(posts)
+  const {currentView, selectedPost, showPostDetail, showPostList} = useNavigation()
 
   const filteredPosts = useMemo(() => {
     const postsToFilter = query ? results : posts
@@ -33,19 +33,41 @@ const App: FC = () => {
     })
   }
 
+  useEffect(() => {
+    const loadFromHash = () => {
+      const hash = window.location.hash;
+
+      if (hash.startsWith('#/post/')) {
+        const postId = hash.replace('#/post/', '');
+        const post = posts.find(p => p.id === Number(postId));
+        if (post) {
+          showPostDetail(post);
+        }
+      } else {
+        showPostList();
+      }
+    };
+
+    loadFromHash();
+
+    window.addEventListener('hashchange', loadFromHash);
+    return () => window.removeEventListener('hashchange', loadFromHash);
+  }, []);
+
   const handlePostClick = (post: Post) => {
     startTransition(() => {
       showPostDetail(post)
+      window.location.hash = `/post/${post.id}`;
     })
   }
 
   const handleBackToList = () => {
     startTransition(() => {
       showPostList()
+      window.location.hash = '';
     })
   }
 
-  // 詳細画面の表示
   if (currentView === 'detail' && selectedPost) {
     return (
       <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
@@ -58,27 +80,28 @@ const App: FC = () => {
     )
   }
 
-  // 記事一覧画面の表示
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
       darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
     }`}>
-      <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+      <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode}/>
 
       {/* Hero Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h1
+            className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             技術を深く、シンプルに
           </h1>
           <p className={`text-xl mb-8 leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            React 19とTypeScriptで構築された<br />
+            React 19とTypeScriptで構築された<br/>
             最新の技術情報をお届けするブログ
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-105">
+            <button
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-105">
               <span>最新記事を読む</span>
-              <ArrowRight size={20} />
+              <ArrowRight size={20}/>
             </button>
           </div>
         </div>
@@ -110,16 +133,16 @@ const App: FC = () => {
 
       {/* Posts Grid */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <Suspense fallback={<LoadingSpinner />}>
+        <Suspense fallback={<LoadingSpinner/>}>
           {isPending ? (
-            <LoadingSpinner />
+            <LoadingSpinner/>
           ) : filteredPosts.length > 0 ? (
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {filteredPosts.map((post, index) => (
                 <div
                   key={post.id}
                   className="animate-slide-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  style={{animationDelay: `${index * 0.1}s`}}
                 >
                   <PostCard
                     post={post}
