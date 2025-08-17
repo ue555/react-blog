@@ -1,4 +1,5 @@
 import {type FC, useOptimistic, useTransition, useState, type JSX} from 'react'
+import React from 'react'
 import {
   ArrowLeft,
   Calendar,
@@ -105,8 +106,98 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
     let listItems: string[] = []
     let isInOrderedList = false
     let orderedListItems: string[] = []
+    let tableLines: string[] = []
+    let isInTable = false
+
+    const processTable = (tableLines: string[]) => {
+      if (tableLines.length < 2) return null
+
+      const headerLine = tableLines[0]
+      const separatorLine = tableLines[1]
+      const bodyLines = tableLines.slice(2)
+
+      // ヘッダーの解析
+      const headers = headerLine.split('|').map(cell => cell.trim()).filter(cell => cell !== '')
+
+      // セパレーターの解析（テキスト配置の判定）
+      const alignments = separatorLine.split('|').map(cell => {
+        const trimmed = cell.trim()
+        if (trimmed.startsWith(':') && trimmed.endsWith(':')) return 'center'
+        if (trimmed.endsWith(':')) return 'right'
+        return 'left'
+      }).filter((_, index, arr) => index < headers.length)
+
+      // ボディの解析
+      const rows = bodyLines.map(line =>
+        line.split('|').map(cell => cell.trim()).filter(cell => cell !== '').slice(0, headers.length)
+      ).filter(row => row.length > 0)
+
+      return (
+        <div className="overflow-x-auto mb-6">
+          <table className={`min-w-full border-collapse border ${
+            darkMode ? 'border-gray-600' : 'border-gray-300'
+          }`}>
+            <thead>
+            <tr className={darkMode ? 'bg-gray-800' : 'bg-gray-50'}>
+              {headers.map((header, index) => (
+                <th
+                  key={index}
+                  className={`px-4 py-2 border font-semibold text-sm ${
+                    darkMode ? 'border-gray-600 text-gray-200' : 'border-gray-300 text-gray-700'
+                  } ${
+                    alignments[index] === 'center' ? 'text-center' :
+                      alignments[index] === 'right' ? 'text-right' : 'text-left'
+                  }`}
+                >
+                  {processInlineMarkdown(header)}
+                </th>
+              ))}
+            </tr>
+            </thead>
+            <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr
+                key={rowIndex}
+                className={`${
+                  rowIndex % 2 === 0
+                    ? (darkMode ? 'bg-gray-900' : 'bg-white')
+                    : (darkMode ? 'bg-gray-850' : 'bg-gray-50')
+                } hover:${darkMode ? 'bg-gray-700' : 'bg-gray-100'} transition-colors`}
+              >
+                {row.map((cell, cellIndex) => (
+                  <td
+                    key={cellIndex}
+                    className={`px-4 py-2 border text-sm ${
+                      darkMode ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'
+                    } ${
+                      alignments[cellIndex] === 'center' ? 'text-center' :
+                        alignments[cellIndex] === 'right' ? 'text-right' : 'text-left'
+                    }`}
+                  >
+                    {processInlineMarkdown(cell)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+
+    const flushTable = () => {
+      if (tableLines.length > 0) {
+        const tableElement = processTable(tableLines)
+        if (tableElement) {
+          elements.push(React.cloneElement(tableElement, { key: `table-${elements.length}` }))
+        }
+        tableLines = []
+        isInTable = false
+      }
+    }
 
     const processInlineMarkdown = (text: string) => {
+      let processedText = text
 
       // インラインコードの処理（最初に処理して他の記法と干渉しないようにする）
       const codeRegex = /`([^`]+)`/g
@@ -132,7 +223,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
 
       // コード以外の部分を処理
       const parts = text.split(/`[^`]+`/)
-      const processedParts = parts.map((part) => {
+      const processedParts = parts.map((part, index) => {
         let processedPart = part
 
         // 太字の処理 **text** と __text__
@@ -217,6 +308,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
       if (line.startsWith('```')) {
         flushList()
         flushOrderedList()
+        flushTable()
 
         if (!isInCodeBlock) {
           isInCodeBlock = true
@@ -256,9 +348,12 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
       }
 
       // 水平線の処理
-      if (line.trim() === '---' || line.trim() === '***' || line.trim() === '___') {
+      const trimmedLine = line.trim()
+      if (trimmedLine === '---' || trimmedLine === '***' || trimmedLine === '___' ||
+        /^-{3,}$/.test(trimmedLine) || /^\*{3,}$/.test(trimmedLine) || /^_{3,}$/.test(trimmedLine)) {
         flushList()
         flushOrderedList()
+        flushTable()
         elements.push(
           <hr key={index} className={`my-8 border-t ${
             darkMode ? 'border-gray-600' : 'border-gray-300'
@@ -267,10 +362,31 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
         return
       }
 
+      // テーブルの処理
+      if (line.includes('|') && line.trim().startsWith('|') && line.trim().endsWith('|')) {
+        flushList()
+        flushOrderedList()
+
+        if (!isInTable) {
+          isInTable = true
+          tableLines = []
+        }
+        tableLines.push(line)
+        return
+      } else if (isInTable && line.trim() === '') {
+        // 空行でテーブル終了
+        flushTable()
+        return
+      } else if (isInTable) {
+        // テーブル以外の行が来たらフラッシュ
+        flushTable()
+      }
+
       // 見出しの処理
       if (line.startsWith('# ')) {
         flushList()
         flushOrderedList()
+        flushTable()
         elements.push(
           <h1 key={index} id={`heading-${index}`} className="text-3xl font-bold mb-6 mt-8 first:mt-0 scroll-mt-24">
             {processInlineMarkdown(line.replace('# ', ''))}
@@ -282,6 +398,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
       if (line.startsWith('## ')) {
         flushList()
         flushOrderedList()
+        flushTable()
         elements.push(
           <h2 key={index} id={`heading-${index}`} className="text-2xl font-semibold mb-4 mt-8 scroll-mt-24">
             {processInlineMarkdown(line.replace('## ', ''))}
@@ -293,6 +410,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
       if (line.startsWith('### ')) {
         flushList()
         flushOrderedList()
+        flushTable()
         elements.push(
           <h3 key={index} id={`heading-${index}`} className="text-xl font-semibold mb-3 mt-6 scroll-mt-24">
             {processInlineMarkdown(line.replace('### ', ''))}
@@ -301,10 +419,35 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
         return
       }
 
+      if (line.startsWith('#### ')) {
+        flushList()
+        flushOrderedList()
+        flushTable()
+        elements.push(
+          <h4 key={index} id={`heading-${index}`} className="text-lg font-semibold mb-2 mt-5 scroll-mt-24">
+            {processInlineMarkdown(line.replace('#### ', ''))}
+          </h4>
+        )
+        return
+      }
+
+      if (line.startsWith('##### ')) {
+        flushList()
+        flushOrderedList()
+        flushTable()
+        elements.push(
+          <h5 key={index} id={`heading-${index}`} className="text-base font-semibold mb-2 mt-4 scroll-mt-24">
+            {processInlineMarkdown(line.replace('##### ', ''))}
+          </h5>
+        )
+        return
+      }
+
       // 番号付きリストの処理
       const orderedListMatch = line.match(/^(\d+)\.\s+(.+)/)
       if (orderedListMatch) {
         flushList() // 通常のリストを先にフラッシュ
+        flushTable()
         isInOrderedList = true
         orderedListItems.push(orderedListMatch[2])
         return
@@ -320,6 +463,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
       // 通常のリストの処理
       if (line.startsWith('- ') || line.startsWith('* ')) {
         flushOrderedList() // 番号付きリストを先にフラッシュ
+        flushTable()
         listItems.push(line.replace(/^[-*]\s+/, ''))
         return
       } else if (listItems.length > 0 && !line.trim()) {
@@ -335,6 +479,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
       if (line.startsWith('> ')) {
         flushList()
         flushOrderedList()
+        flushTable()
         elements.push(
           <blockquote key={index} className={`border-l-4 border-blue-500 pl-4 italic my-4 ${
             darkMode ? 'text-gray-300' : 'text-gray-600'
@@ -349,6 +494,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
       if (line.trim()) {
         flushList()
         flushOrderedList()
+        flushTable()
         elements.push(
           <p key={index} className="mb-4 leading-relaxed">
             {processInlineMarkdown(line)}
@@ -359,9 +505,10 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
       }
     })
 
-    // 最後にリストをフラッシュ
+    // 最後にリストとテーブルをフラッシュ
     flushList()
     flushOrderedList()
+    flushTable()
 
     return elements
   }

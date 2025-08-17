@@ -244,13 +244,14 @@ Markdownはドキュメントやブログ記事を手軽に記述できる便利
 
 このライブラリを使えば、Markdownの各要素（見出し、リンク、コードブロックなど）を自由なデザインのReactコンポーネントに置き換え、リッチで統一感のあるブログを作成できます。
 
-- react-markdownのGitHubリポジトリ: [https://github.com/remarkjs/react-markdown](https://github.com/remarkjs/react-markdown)
+- **react-markdownのGitHubリポジトリ**: [https://github.com/remarkjs/react-markdown](https://github.com/remarkjs/react-markdown)
 
-本記事では、react-markdown のコンポーネントカスタマイズ機能の仕組みと、その裏側にある重要なWeb技術について解説します。
+本記事では、**react-markdown** のコンポーネントカスタマイズ機能の仕組みと、その裏側にある重要なWeb技術について解説します。
+---------
 
 ## react-markdownを利用したカスタムコンポーネントの仕組み
 
-react-markdownの最も強力な機能の一つが、componentsプロパティを使ってMarkdownタグを任意のReactコンポーネントにマッピングできる点です。
+**react-markdown** の最も強力な機能の一つが、**components** プロパティを使ってMarkdownタグを任意のReactコンポーネントにマッピングできる点です。
 
 以下は、ブログ記事でよく使う要素をカスタマイズする設定例です。
 
@@ -285,7 +286,7 @@ const mdComponents: Partial<Components> = {
 };
 \`\`\`
 
-このmdComponentsオブジェクトをReactMarkdownコンポーネントに渡すことで、Markdownのレンダリング結果をカスタマイズします。
+この **mdComponents** オブジェクトを **ReactMarkdown** コンポーネントに渡すことで、Markdownのレンダリング結果をカスタマイズします。
 
 \`\`\`TypeScript
 import ReactMarkdown from 'react-markdown';
@@ -303,16 +304,17 @@ function MyBlogComponent({ markdownContent }) {
 
 ### 各コンポーネントの解説
 
-* a (リンク):
-すべてのリンクが新しいタブで開くようにtarget="_blank"を設定。同時に、後述するセキュリティリスク対策としてrel="noopener noreferrer"を付与しています。
-* code (コードブロック):
-inlineプロパティの有無で、バッククォート1つで囲む「インラインコード」と、3つで囲む「コードブロック」を判別しています。インラインコードには背景色などのスタイルを適用し、コードブロックはシンタックスハイライト用のclassNameをそのまま保持するようにしています。
-* h2, h3 (見出し):
+* **a (リンク)**:
+すべてのリンクが新しいタブで開くように **target="_blank"** を設定。同時に、後述するセキュリティリスク対策として **rel="noopener noreferrer"** を付与しています。
+- **code (コードブロック)**:
+**inline** プロパティの有無で、バッククォート1つで囲む「インラインコード」と、3つで囲む「コードブロック」を判別しています。インラインコードには背景色などのスタイルを適用し、コードブロックはシンタックスハイライト用の **className** をそのまま保持するようにしています。
+- **h2, h3 (見出し)**:
 Tailwind CSSのクラスを使い、見出し階層に応じた余白（マージン）や文字の太さ・大きさを設定し、デザインに一貫性を持たせています。
-* img (画像):
-画像にrounded-lg（角丸）やshadow（影）といった装飾を加えています。また、alt属性が未定義の場合でもエラーにならないよう、?? ''で空文字列をフォールバックとして設定し、アクセシビリティに配慮しています。
+- **img (画像)**:
+画像に **rounded-lg（角丸）** や **shadow（影）** といった装飾を加えています。また、alt属性が未定義の場合でもエラーにならないよう、**?? ''** で空文字列をフォールバックとして設定し、アクセシビリティに配慮しています。
 
-このように、componentsプロパティを使いこなすことで、Markdownの記述しやすさを維持しつつ、デザイン、セキュリティ、アクセシビリティを高度に制御したWebページを構築できます。
+このように、**components** プロパティを使いこなすことで、Markdownの記述しやすさを維持しつつ、デザイン、セキュリティ、アクセシビリティを高度に制御したWebページを構築できます。
+---------
 
 ### 【補足】知っておきたい関連技術
 
@@ -320,18 +322,18 @@ Tailwind CSSのクラスを使い、見出し階層に応じた余白（マー�
 
 ### 外部リンクのセキュリティ：「noopener」と「noreferrer」
 
-rel="noopener noreferrer"は、外部リンクのセキュリティとプライバシーを強化するための重要な属性です。
+**rel="noopener noreferrer"** は、外部リンクのセキュリティとプライバシーを強化するための重要な属性です。
 
-* noopenerの役割
-target="_blank"でリンクを開くと、新しく開かれたページはwindow.openerというプロパティを通じて、リンク元のページを操作できてしまいます。これは 「Reverse Tabnabbing」 と呼ばれるフィッシング攻撃に悪用される可能性があります。noopenerを指定すると、このwindow.openerがnullになり、新しいタブから元のページへのアクセスを完全に遮断します。
-* noreferrerの役割
-通常のリンク遷移では、遷移先のサイトに「どのページから来たか」という情報（リファラー）がHTTPヘッダーで送信されます。noreferrerは、このリファラー情報を送信しないようにする設定です。これにより、ユーザーの閲覧履歴に関するプライバシーを保護し、内部のURL構造が外部に漏れるのを防ぎます。
+- **noopenerの役割**
+**target="_blank"** でリンクを開くと、新しく開かれたページは **window.opener** というプロパティを通じて、リンク元のページを操作できてしまいます。これは **「Reverse Tabnabbing」** と呼ばれるフィッシング攻撃に悪用される可能性があります。 **noopener** を指定すると、この **window.opener** が **null** になり、新しいタブから元のページへのアクセスを完全に遮断します。
+- **noreferrerの役割**
+通常のリンク遷移では、遷移先のサイトに「どのページから来たか」という情報（リファラー）がHTTPヘッダーで送信されます。 **noreferrer** は、このリファラー情報を送信しないようにする設定です。これにより、ユーザーの閲覧履歴に関するプライバシーを保護し、内部のURL構造が外部に漏れるのを防ぎます。
 
-最新ブラウザの多くはtarget="_blank"に対して自動的にnoopenerの挙動を適用しますが、互換性や明示的なセキュリティ担保のため、外部リンクには常にrel="noopener noreferrer"をセットすることがベストプラクティスです。
+最新ブラウザの多くは **target="_blank"** に対して自動的に **noopener** の挙動を適用しますが、互換性や明示的なセキュリティ担保のため、外部リンクには常に **rel="noopener noreferrer"** をセットすることがベストプラクティスです。
 
 ### 【深掘り】window.openerとは何か？
 
-window.openerは、window.open()やtarget="_blank"によって開かれた子ウィンドウから、親ウィンドウのWindowオブジェクトを参照するためのプロパティです。
+**window.opener** は、 **window.open()** や **target="_blank"** によって開かれた子ウィンドウから、 **親ウィンドウのWindowオブジェクト** を参照するためのプロパティです。
 
 これが有効な場合、悪意のある子ページは以下のような操作ができてしまいます。
 
@@ -342,13 +344,13 @@ if (window.opener) {
   window.opener.location = 'https://fake-login-page.com';
 }
 \`\`\`
-ユーザーが元のタブに戻ったとき、信頼していたはずのサイトが偽サイトにすり替わっている、という攻撃が成立してしまいます。rel="noopener"はこの参照を断ち切ることで、こうしたリスクを根本から防ぎます。
+ユーザーが元のタブに戻ったとき、信頼していたはずのサイトが偽サイトにすり替わっている、という攻撃が成立してしまいます。 **rel="noopener"** はこの参照を断ち切ることで、こうしたリスクを根本から防ぎます。
 
 ### 【深掘り】コンポーネントの柔軟性を支える{...props}
 
-{...props}は、JavaScriptのスプレッド構文を使い、propsオブジェクトの全プロパティをコンポーネントに展開する記述です。
+**{...props}** は、JavaScriptのスプレッド構文を使い、**propsオブジェクト** の全プロパティをコンポーネントに展開する記述です。
 
-これを使う主な理由は柔軟性です。react-markdownは、標準のHTML属性以外にも、シンタックスハイライト用のdata-lang属性など、様々なプロパティを内部的に渡してきます。{...props}を使うことで、これらのプロパティを失うことなく、最終的なHTML要素にすべて引き継ぐことができます。
+これを使う主な理由は **柔軟性** です。 **react-markdown** は、標準のHTML属性以外にも、シンタックスハイライト用の **data-lang属性** など、様々なプロパティを内部的に渡してきます。 **{...props}** を使うことで、これらのプロパティを失うことなく、最終的なHTML要素にすべて引き継ぐことができます。
 
 また、以下の分割代入と組み合わせることで、特定のプロパティだけを個別に取り出し、残りをまとめて渡すという洗練された記述が可能になります。
 
@@ -359,26 +361,26 @@ if (window.opener) {
 
 ### 【深掘り】複雑なTypeScriptの型定義を分解する
 
-codeコンポーネントの引数に付けられた以下の型定義は、一見複雑に見えます。
+**codeコンポーネント** の引数に付けられた以下の型定義は、一見複雑に見えます。
 
 \`\`\`TypeScript
 ClassAttributes<HTMLElement> & HTMLAttributes<HTMLElement> & ExtraProps & { inline?: boolean }
 \`\`\`
 
-- ClassAttributes<HTMLElement>: Reactのkeyやrefといった特殊なプロパティを定義します。
-- HTMLAttributes<HTMLElement>: id, style, onClickなど、標準的なHTML要素が持つ属性をすべて定義します。
-- ExtraProps: react-markdownが独自に追加するnode（構文木の要素）などのプロパティを定義します。
-- { inline?: boolean }: このコンポーネントで独自に利用するinlineプロパティを定義します。
+- **ClassAttributes<HTMLElement>**: Reactの **key** や **ref** といった特殊なプロパティを定義します。
+- **HTMLAttributes<HTMLElement>**: **id**, **style**, **onClick** など、標準的なHTML要素が持つ属性をすべて定義します。
+- **ExtraProps**: **react-markdown** が独自に追加する **node（構文木の要素）** などのプロパティを定義します。
+- **{ inline?: boolean }**: このコンポーネントで独自に利用する **inline** プロパティを定義します。
 
-これらを&で結合することで、Reactコンポーネントとして必要な機能、HTMLの標準機能、ライブラリ固有の機能、そして独自の機能を、すべて型安全な状態で扱えるようになっているのです。
+これらを **&** で結合することで、Reactコンポーネントとして必要な機能、HTMLの標準機能、ライブラリ固有の機能、そして独自の機能を、すべて型安全な状態で扱えるようになっているのです。
                      `,
     date: "2025-01-15",
     category: "Build Tools",
     readTime: "12分",
-    tags: ["Vite", "ビルドツール", "パフォーマンス"],
+    tags: ["React", "Tailwind CSS"],
     author: "Tech Writer",
-    slug: "vite-6-frontend-development",
-    publishedAt: "2025-01-15T14:00:00Z",
+    slug: "frontend-development",
+    publishedAt: "2025-08-18T14:00:00Z",
     views: 734,
     likes: 45
   },
