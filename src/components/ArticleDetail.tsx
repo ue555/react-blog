@@ -102,13 +102,125 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
     let codeBlockContent = ''
     let isInCodeBlock = false
     let codeBlockLanguage = ''
+    let listItems: string[] = []
+    let isInOrderedList = false
+    let orderedListItems: string[] = []
+
+    const processInlineMarkdown = (text: string) => {
+
+      // インラインコードの処理（最初に処理して他の記法と干渉しないようにする）
+      const codeRegex = /`([^`]+)`/g
+      const codeMatches: { match: string; replacement: JSX.Element; index: number }[] = []
+      let match
+      while ((match = codeRegex.exec(text)) !== null) {
+        const codeElement = (
+          <code
+            key={`code-${match.index}`}
+            className={`px-2 py-1 rounded text-sm font-mono ${
+              darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-800'
+            }`}
+          >
+            {match[1]}
+          </code>
+        )
+        codeMatches.push({
+          match: match[0],
+          replacement: codeElement,
+          index: match.index
+        })
+      }
+
+      // コード以外の部分を処理
+      const parts = text.split(/`[^`]+`/)
+      const processedParts = parts.map((part) => {
+        let processedPart = part
+
+        // 太字の処理 **text** と __text__
+        processedPart = processedPart.replace(/\*\*(.*?)\*\*/g, (_, content) => `<strong>${content}</strong>`)
+        processedPart = processedPart.replace(/__(.*?)__/g, (_, content) => `<strong>${content}</strong>`)
+
+        // 斜体の処理 *text* と _text_
+        processedPart = processedPart.replace(/\*(.*?)\*/g, (_, content) => `<em>${content}</em>`)
+        processedPart = processedPart.replace(/_(.*?)_/g, (_, content) => `<em>${content}</em>`)
+
+        // 取り消し線の処理 ~~text~~
+        processedPart = processedPart.replace(/~~(.*?)~~/g, (_, content) => `<del>${content}</del>`)
+
+        // リンクの処理 [text](url)
+        processedPart = processedPart.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) =>
+          `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline">${text}</a>`
+        )
+
+        return processedPart
+      })
+
+      // HTMLを含む文字列とインラインコードを組み合わせて最終的なJSX要素を作成
+      const finalElements: (string | JSX.Element)[] = []
+      let codeIndex = 0
+
+      processedParts.forEach((part, index) => {
+        if (part.includes('<')) {
+          // HTMLタグが含まれている場合はdangerouslySetInnerHTMLを使用
+          finalElements.push(
+            <span
+              key={`html-${index}`}
+              dangerouslySetInnerHTML={{ __html: part }}
+            />
+          )
+        } else {
+          finalElements.push(part)
+        }
+
+        // インラインコードを挿入
+        if (codeIndex < codeMatches.length) {
+          finalElements.push(codeMatches[codeIndex].replacement)
+          codeIndex++
+        }
+      })
+
+      return finalElements
+    }
+
+    const flushList = () => {
+      if (listItems.length > 0) {
+        elements.push(
+          <ul key={`list-${elements.length}`} className="list-disc list-inside mb-4 space-y-1">
+            {listItems.map((item, index) => (
+              <li key={index} className="mb-1">
+                {processInlineMarkdown(item)}
+              </li>
+            ))}
+          </ul>
+        )
+        listItems = []
+      }
+    }
+
+    const flushOrderedList = () => {
+      if (orderedListItems.length > 0) {
+        elements.push(
+          <ol key={`ol-${elements.length}`} className="list-decimal list-inside mb-4 space-y-1">
+            {orderedListItems.map((item, index) => (
+              <li key={index} className="mb-1">
+                {processInlineMarkdown(item)}
+              </li>
+            ))}
+          </ol>
+        )
+        orderedListItems = []
+        isInOrderedList = false
+      }
+    }
 
     lines.forEach((line, index) => {
       // コードブロックの開始
       if (line.startsWith('```')) {
+        flushList()
+        flushOrderedList()
+
         if (!isInCodeBlock) {
           isInCodeBlock = true
-          codeBlockLanguage = line.replace('```', '')
+          codeBlockLanguage = line.replace('```', '').trim()
           codeBlockContent = ''
         } else {
           // コードブロックの終了
@@ -143,84 +255,113 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
         return
       }
 
+      // 水平線の処理
+      if (line.trim() === '---' || line.trim() === '***' || line.trim() === '___') {
+        flushList()
+        flushOrderedList()
+        elements.push(
+          <hr key={index} className={`my-8 border-t ${
+            darkMode ? 'border-gray-600' : 'border-gray-300'
+          }`} />
+        )
+        return
+      }
+
       // 見出しの処理
       if (line.startsWith('# ')) {
+        flushList()
+        flushOrderedList()
         elements.push(
           <h1 key={index} id={`heading-${index}`} className="text-3xl font-bold mb-6 mt-8 first:mt-0 scroll-mt-24">
-            {line.replace('# ', '')}
+            {processInlineMarkdown(line.replace('# ', ''))}
           </h1>
         )
         return
       }
 
       if (line.startsWith('## ')) {
+        flushList()
+        flushOrderedList()
         elements.push(
           <h2 key={index} id={`heading-${index}`} className="text-2xl font-semibold mb-4 mt-8 scroll-mt-24">
-            {line.replace('## ', '')}
+            {processInlineMarkdown(line.replace('## ', ''))}
           </h2>
         )
         return
       }
 
       if (line.startsWith('### ')) {
+        flushList()
+        flushOrderedList()
         elements.push(
           <h3 key={index} id={`heading-${index}`} className="text-xl font-semibold mb-3 mt-6 scroll-mt-24">
-            {line.replace('### ', '')}
+            {processInlineMarkdown(line.replace('### ', ''))}
           </h3>
         )
         return
       }
 
-      // リストの処理
-      if (line.startsWith('- ')) {
-        elements.push(
-          <ul key={index} className="list-disc list-inside mb-4">
-            <li className="mb-1">{line.replace('- ', '')}</li>
-          </ul>
-        )
+      // 番号付きリストの処理
+      const orderedListMatch = line.match(/^(\d+)\.\s+(.+)/)
+      if (orderedListMatch) {
+        flushList() // 通常のリストを先にフラッシュ
+        isInOrderedList = true
+        orderedListItems.push(orderedListMatch[2])
         return
+      } else if (isInOrderedList && !line.trim()) {
+        // 空行で番号付きリストを終了
+        flushOrderedList()
+        return
+      } else if (isInOrderedList) {
+        // 番号付きリスト以外の行が来たらフラッシュ
+        flushOrderedList()
+      }
+
+      // 通常のリストの処理
+      if (line.startsWith('- ') || line.startsWith('* ')) {
+        flushOrderedList() // 番号付きリストを先にフラッシュ
+        listItems.push(line.replace(/^[-*]\s+/, ''))
+        return
+      } else if (listItems.length > 0 && !line.trim()) {
+        // 空行でリストを終了
+        flushList()
+        return
+      } else if (listItems.length > 0) {
+        // リスト以外の行が来たらフラッシュ
+        flushList()
       }
 
       // 引用の処理
       if (line.startsWith('> ')) {
+        flushList()
+        flushOrderedList()
         elements.push(
           <blockquote key={index} className={`border-l-4 border-blue-500 pl-4 italic my-4 ${
             darkMode ? 'text-gray-300' : 'text-gray-600'
           }`}>
-            {line.replace('> ', '')}
+            {processInlineMarkdown(line.replace('> ', ''))}
           </blockquote>
         )
         return
       }
 
-      // インラインコードの処理
-      const processInlineCode = (text: string) => {
-        const parts = text.split(/(`[^`]+`)/)
-        return parts.map((part, i) => {
-          if (part.startsWith('`') && part.endsWith('`')) {
-            return (
-              <code key={i} className={`px-2 py-1 rounded text-sm font-mono ${
-                darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-800'
-              }`}>
-                {part.slice(1, -1)}
-              </code>
-            )
-          }
-          return part
-        })
-      }
-
       // 通常の段落
       if (line.trim()) {
+        flushList()
+        flushOrderedList()
         elements.push(
           <p key={index} className="mb-4 leading-relaxed">
-            {processInlineCode(line)}
+            {processInlineMarkdown(line)}
           </p>
         )
       } else {
         elements.push(<div key={index} className="mb-2" />)
       }
     })
+
+    // 最後にリストをフラッシュ
+    flushList()
+    flushOrderedList()
 
     return elements
   }
