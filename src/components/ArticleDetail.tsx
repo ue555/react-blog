@@ -23,63 +23,6 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
                                                  onBack,
                                                  onPostClick
                                                }) => {
-  const [setOptimisticLikes] = useOptimistic(post.likes || 0)
-  const [isLiked, setOptimisticLiked] = useOptimistic(false)
-  const [isBookmarked, setOptimisticBookmarked] = useOptimistic(false)
-  const [isPending, startTransition] = useTransition()
-  const [showShareMenu, setShowShareMenu] = useState(false)
-
-  const handleLike = () => {
-    startTransition(() => {
-      setOptimisticLikes(prev => isLiked ? prev - 1 : prev + 1)
-      setOptimisticLiked(!isLiked)
-    })
-  }
-
-  const handleBookmark = () => {
-    startTransition(() => {
-      setOptimisticBookmarked(!isBookmarked)
-    })
-  }
-
-  const handleShare = (platform: 'twitter' | 'facebook' | 'copy') => {
-    const url = `${window.location.origin}/posts/${post.slug}`
-    const text = `${post.title} - Tech Blog`
-
-    switch (platform) {
-      case 'twitter':
-        window.open(
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
-          '_blank'
-        )
-        break
-
-      case 'facebook':
-        window.open(
-          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-          '_blank'
-        )
-        break
-
-      case 'copy':
-        navigator.clipboard.writeText(url).then(() => {
-          alert('リンクをコピーしました！')
-        }).catch(() => {
-          // フォールバック: 古いブラウザ対応
-          const textArea = document.createElement('textarea')
-          textArea.value = url
-          document.body.appendChild(textArea)
-          textArea.select()
-          document.execCommand('copy')
-          document.body.removeChild(textArea)
-          alert('リンクをコピーしました！')
-        })
-        break
-    }
-
-    setShowShareMenu(false)
-  }
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ja-JP', {
       year: 'numeric',
@@ -116,7 +59,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
         if (trimmed.startsWith(':') && trimmed.endsWith(':')) return 'center'
         if (trimmed.endsWith(':')) return 'right'
         return 'left'
-      }).filter((_, index, arr) => index < headers.length)
+      }).filter((_, index) => index < headers.length)
 
       // ボディの解析
       const rows = bodyLines.map(line =>
@@ -188,7 +131,6 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
     }
 
     const processInlineMarkdown = (text: string) => {
-      let processedText = text
 
       // インラインコードの処理（最初に処理して他の記法と干渉しないようにする）
       const codeRegex = /`([^`]+)`/g
@@ -214,7 +156,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
 
       // コード以外の部分を処理
       const parts = text.split(/`[^`]+`/)
-      const processedParts = parts.map((part, index) => {
+      const processedParts = parts.map((part) => {
         let processedPart = part
 
         // 太字の処理 **text** と __text__
