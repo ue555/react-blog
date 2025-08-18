@@ -1,4 +1,4 @@
-import {type FC, useOptimistic, useTransition, useState, type JSX} from 'react'
+import {type FC, type JSX} from 'react'
 import React from 'react'
 import {
   ArrowLeft,
@@ -7,8 +7,8 @@ import {
 } from 'lucide-react'
 import RelatedPosts from './RelatedPosts'
 import TableOfContents from './TableOfContents'
-import { posts } from '../data/posts'
-import type { Post } from '../types'
+import {posts} from '../data/posts'
+import type {Post} from '../types'
 
 interface ArticleDetailProps {
   post: Post
@@ -123,7 +123,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
       if (tableLines.length > 0) {
         const tableElement = processTable(tableLines)
         if (tableElement) {
-          elements.push(React.cloneElement(tableElement, { key: `table-${elements.length}` }))
+          elements.push(React.cloneElement(tableElement, {key: `table-${elements.length}`}))
         }
         tableLines = []
         isInTable = false
@@ -188,7 +188,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
           finalElements.push(
             <span
               key={`html-${index}`}
-              dangerouslySetInnerHTML={{ __html: part }}
+              dangerouslySetInnerHTML={{__html: part}}
             />
           )
         } else {
@@ -290,7 +290,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
         elements.push(
           <hr key={index} className={`my-8 border-t ${
             darkMode ? 'border-gray-600' : 'border-gray-300'
-          }`} />
+          }`}/>
         )
         return
       }
@@ -434,7 +434,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
           </p>
         )
       } else {
-        elements.push(<div key={index} className="mb-2" />)
+        elements.push(<div key={index} className="mb-2"/>)
       }
     })
 
@@ -461,7 +461,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
               darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={16}/>
             記事一覧に戻る
           </button>
         </div>
@@ -482,14 +482,6 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
                 <div className={`flex items-center gap-4 text-sm ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>
-                  {/*<div className="flex items-center gap-1">
-                    <Eye size={14} />
-                    <span>{post.views?.toLocaleString() || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Heart size={14} />
-                    <span>{likes}</span>
-                  </div>*/}
                 </div>
               </div>
 
@@ -500,92 +492,15 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
               <div className={`flex flex-wrap items-center gap-4 text-sm ${
                 darkMode ? 'text-gray-400' : 'text-gray-600'
               }`}>
-                {/*<div className="flex items-center gap-1">
-                  <User size={14} />
-                  <span>{post.author}</span>
-                </div>*/}
                 <div className="flex items-center gap-1">
-                  <Calendar size={14} />
+                  <Calendar size={14}/>
                   <span>{formatDate(post.date)}</span>
                 </div>
-                {/*<div className="flex items-center gap-1">
-                  <Clock size={14} />
-                  <span>{post.readTime}</span>
-                </div>*/}
               </div>
             </div>
 
             {/* Action Buttons */}
-            {/*<div className="flex items-center gap-3 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">*/}
             <div className="flex items-center gap-3 border-b border-gray-200 dark:border-gray-700">
-              {/*<button
-                onClick={handleLike}
-                disabled={isPending}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                  isLiked
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : darkMode
-                      ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
-                } ${isPending ? 'opacity-50' : 'hover:scale-105'}`}
-              >
-                <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} />
-                <span>{likes}</span>
-              </button>
-
-              <button
-                onClick={handleBookmark}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                  isBookmarked
-                    ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                    : darkMode
-                      ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
-                } hover:scale-105`}
-              >
-                <Bookmark size={16} fill={isBookmarked ? 'currentColor' : 'none'} />
-              </button>
-
-              <div className="relative">
-                <button
-                  onClick={() => setShowShareMenu(!showShareMenu)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                    darkMode
-                      ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
-                  } hover:scale-105`}
-                >
-                  <Share2 size={16} />
-                </button>
-
-                {showShareMenu && (
-                  <div className={`absolute top-full left-0 mt-2 p-2 rounded-lg shadow-lg border z-20 ${
-                    darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
-                  }`}>
-                    <button
-                      onClick={() => handleShare('twitter')}
-                      className="flex items-center gap-2 w-full px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <Twitter size={16} />
-                      Twitter
-                    </button>
-                    <button
-                      onClick={() => handleShare('facebook')}
-                      className="flex items-center gap-2 w-full px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <Facebook size={16} />
-                      Facebook
-                    </button>
-                    <button
-                      onClick={() => handleShare('copy')}
-                      className="flex items-center gap-2 w-full px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <LinkIcon size={16} />
-                      リンクをコピー
-                    </button>
-                  </div>
-                )}
-              </div>*/}
             </div>
 
             {/* Article Content */}
@@ -606,7 +521,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
                       darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
                     } hover:scale-105 transition-transform cursor-pointer`}
                   >
-                    <Tag size={12} />
+                    <Tag size={12}/>
                     {tag}
                   </span>
                 ))}
@@ -626,7 +541,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
 
           {/* Sidebar */}
           <div className="lg:col-span-4 mt-8 lg:mt-0">
-            <TableOfContents content={post.content} darkMode={darkMode} />
+            <TableOfContents content={post.content} darkMode={darkMode}/>
           </div>
         </div>
       </div>
