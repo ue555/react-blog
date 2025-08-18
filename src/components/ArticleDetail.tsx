@@ -3,16 +3,7 @@ import React from 'react'
 import {
   ArrowLeft,
   Calendar,
-  Clock,
   Tag,
-  User,
-  Eye,
-  Heart,
-  Share2,
-  Twitter,
-  Facebook,
-  Link as LinkIcon,
-  Bookmark
 } from 'lucide-react'
 import RelatedPosts from './RelatedPosts'
 import TableOfContents from './TableOfContents'
@@ -32,7 +23,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
                                                  onBack,
                                                  onPostClick
                                                }) => {
-  const [likes, setOptimisticLikes] = useOptimistic(post.likes || 0)
+  const [setOptimisticLikes] = useOptimistic(post.likes || 0)
   const [isLiked, setOptimisticLiked] = useOptimistic(false)
   const [isBookmarked, setOptimisticBookmarked] = useOptimistic(false)
   const [isPending, startTransition] = useTransition()
