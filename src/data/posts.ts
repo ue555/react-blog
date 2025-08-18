@@ -3,171 +3,275 @@ import type { Post } from '../types'
 export const posts: Post[] = [
   {
     id: 1,
-    title: "React 19の新機能と実践的な使い方",
-    excerpt: "React 19で導入されたuseTransition、useDeferredValue、Suspenseの新機能について詳しく解説します。",
-    content: `# React 19の新機能と実践的な使い方
+    title: "React 19からの新機能を紹介します",
+    excerpt: "React 19からの新機能を紹介します",
+    content: `# React 19の新機能を紹介します
 
-React 19では、パフォーマンスとユーザーエクスペリエンスを大幅に向上させる新機能が導入されました。この記事では、特に重要な3つの機能について詳しく解説します。
+React 19（2024年4月25日リリース）は、React開発に劇的な進化をもたらす新機能や安定化、最適化が多数導入されました。React 19の機能を紹介します。
 
-## useTransition - 非同期UIの革命
+## インストール方法
 
-\`useTransition\`は、重い処理を実行しながらもUIの応答性を保つための革新的なHookです。
+\`\`\`bash
+npm install --save-exact react@^19.0.0 react-dom@^19.0.0
 
-\`\`\`typescript
-import { useTransition, useState } from 'react'
+# TypeScriptを使用している場合
+npm install --save-exact @types/react@^19.0.0 @types/react-dom@^19.0.0
+\`\`\`
 
-function SearchComponent() {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState([])
-  const [isPending, startTransition] = useTransition()
+## 破壊的変更
 
-  const handleSearch = (newQuery: string) => {
-    setQuery(newQuery)
-    startTransition(() => {
-      // 重い検索処理
-      const searchResults = performHeavySearch(newQuery)
-      setResults(searchResults)
-    })
+### 1. レンダー中のエラーハンドリングの変更
+React 19 では、重複を減らすためにエラーの扱いを改善し、再スローは行わないようになりました。
+
+- **キャッチされないエラー**: \`window.reportError\`に報告
+- **キャッチされたエラー**: \`console.error\`に報告
+- エラーバウンダリの新しいオプション追加
+
+\`\`\`javascript
+const root = createRoot(container, {
+  onUncaughtError: (error, errorInfo) => {
+    // ... エラーレポートをログ出力
+  },
+  onCaughtError: (error, errorInfo) => {
+    // ... エラーレポートをログ出力
   }
+});
+\`\`\`
 
-  return (
-    <div>
-      <input
-        value={query}
-        onChange={(e) => handleSearch(e.target.value)}
-        disabled={isPending}
-      />
-      {isPending && <Spinner />}
-      <ResultsList results={results} />
-    </div>
-  )
+### 2. 非推奨化されたReact APIの削除
+
+#### 関数コンポーネントの\`propTypes\`と\`defaultProps\`
+PropTypes は 2017 年 4 月 (v15.5.0) に非推奨化されました。
+
+\`\`\`javascript
+// Before（削除前）
+import PropTypes from 'prop-types';
+function Heading({text}) {
+  return <h1>{text}</h1>;
+}
+Heading.propTypes = {
+  text: PropTypes.string,
+};
+Heading.defaultProps = {
+  text: 'Hello, world!',
+};
+
+// After（React 19対応）
+interface Props {
+  text?: string;
+}
+function Heading({text = 'Hello, world!'}: Props) {
+  return <h1>{text}</h1>;
 }
 \`\`\`
 
-### 主なメリット
-- **ユーザー入力の優先**: ユーザーのインタラクションを最優先
-- **スムーズなUI**: 重い処理中でもUIが固まらない
-- **適応的スケジューリング**: ブラウザのリソースを効率的に活用
+#### レガシーコンテクストの削除
+レガシーコンテクストは 2018 年 10 月 (v16.6.0) に非推奨化されました。
 
-## useDeferredValue - スマートな遅延処理
+\`\`\`javascript
+// Before（削除前）
+import PropTypes from 'prop-types';
+class Parent extends React.Component {
+  static childContextTypes = {
+    foo: PropTypes.string.isRequired,
+  };
+  getChildContext() {
+    return { foo: 'bar' };
+  }
+  render() {
+    return <Child />;
+  }
+}
 
-\`useDeferredValue\`は、値の更新を遅延させることで、パフォーマンスを最適化します。
-
-\`\`\`typescript
-import { useState, useDeferredValue, useMemo } from 'react'
-
-function FilteredList({ items }: { items: Item[] }) {
-  const [filter, setFilter] = useState('')
-  const deferredFilter = useDeferredValue(filter)
-
-  const filteredItems = useMemo(() => {
-    return items.filter(item =>
-      item.name.toLowerCase().includes(deferredFilter.toLowerCase())
-    )
-  }, [items, deferredFilter])
-
-  return (
-    <div>
-      <input
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        placeholder="フィルター..."
-      />
-      <List items={filteredItems} />
-      {filter !== deferredFilter && <LoadingIndicator />}
-    </div>
-  )
+// After（React 19対応）
+const FooContext = React.createContext();
+class Parent extends React.Component {
+  render() {
+    return (
+      <FooContext.Provider value='bar'>
+        <Child />
+      </FooContext.Provider>
+    );
+  }
 }
 \`\`\`
 
-### 使用場面
-- **リアルタイム検索**: 入力中の快適性を保持
-- **大量データの処理**: メモリ効率の改善
-- **UI応答性**: スムーズなユーザー体験
+#### 文字列形式のrefの削除
+文字列形式の ref は 2018 年 3 月 (v16.3.0) に非推奨化されました。
 
-## Suspense - 宣言的ローディング
-
-React 19のSuspenseは、さらに柔軟で強力になりました。
-
-\`\`\`typescript
-import { Suspense, lazy } from 'react'
-
-const LazyComponent = lazy(() => import('./HeavyComponent'))
-
-function App() {
-  return (
-    <div>
-      <Suspense fallback={<SkeletonLoader />}>
-        <LazyComponent />
-      </Suspense>
-    </div>
-  )
+\`\`\`javascript
+// Before（削除前）
+class MyComponent extends React.Component {
+  componentDidMount() {
+    this.refs.input.focus();
+  }
+  render() {
+    return <input ref='input' />;
+  }
 }
 
-// エラーバウンダリとの組み合わせ
-function RobustApp() {
-  return (
-    <ErrorBoundary fallback={<ErrorMessage />}>
-      <Suspense fallback={<LoadingSpinner />}>
-        <AsyncDataComponent />
-      </Suspense>
-    </ErrorBoundary>
-  )
+// After（React 19対応）
+class MyComponent extends React.Component {
+  componentDidMount() {
+    this.input.focus();
+  }
+  render() {
+    return <input ref={input => this.input = input} />;
+  }
 }
 \`\`\`
 
-## 実践的な組み合わせ
+#### その他の削除された機能
+- **モジュールパターンファクトリ**: 通常の関数に移行
+- **React.createFactory**: JSXに移行
+- **react-test-renderer/shallow**: \`react-shallow-renderer\`パッケージを直接使用
 
-これらの機能を組み合わせることで、より洗練されたアプリケーションを構築できます：
+### 3. 非推奨化されたReact DOM APIの削除
 
-\`\`\`typescript
-function ModernBlogApp() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isPending, startTransition] = useTransition()
-  const deferredQuery = useDeferredValue(searchQuery)
+#### ReactDOM.renderの削除
+\`\`\`javascript
+// Before（削除前）
+import {render} from 'react-dom';
+render(<App />, document.getElementById('root'));
 
-  const searchResults = useMemo(() => {
-    return performSearch(deferredQuery)
-  }, [deferredQuery])
-
-  return (
-    <div>
-      <SearchInput
-        value={searchQuery}
-        onChange={(query) => {
-          setSearchQuery(query)
-          startTransition(() => {
-            // 重い処理をトランジションで包む
-          })
-        }}
-      />
-
-      <Suspense fallback={<ArticleSkeletons />}>
-        <ArticleList
-          articles={searchResults}
-          isPending={isPending}
-        />
-      </Suspense>
-    </div>
-  )
-}
+// After（React 19対応）
+import {createRoot} from 'react-dom/client';
+const root = createRoot(document.getElementById('root'));
+root.render(<App />);
 \`\`\`
+
+#### ReactDOM.hydrateの削除
+\`\`\`javascript
+// Before（削除前）
+import {hydrate} from 'react-dom';
+hydrate(<App />, document.getElementById('root'));
+
+// After（React 19対応）
+import {hydrateRoot} from 'react-dom/client';
+hydrateRoot(document.getElementById('root'), <App />);
+\`\`\`
+
+#### その他の削除
+- **ReactDOM.findDOMNode**: DOM用のrefで置き換え
+- **unmountComponentAtNode**: \`root.unmount()\`を使用
+- **react-dom/test-utils**: \`act\`は\`react\`パッケージからインポート
+
+## 新たな非推奨化
+
+### 1. element.refの非推奨化
+React 19 では props としての ref がサポートされるため、element.ref を非推奨化します。代わりに element.props.ref を使用します。
+
+### 2. react-test-rendererの非推奨化
+react-test-renderer を非推奨化します。これはユーザが使用する環境とは異なる独自のレンダラ環境を実装しており、内部実装の詳細に対するテストを助長し、React 内部の構造に依存するものだからです。
+
+推奨される代替案：
+- \`@testing-library/react\`
+- \`@testing-library/react-native\`
+
+## 注目すべき変更点
+
+### 1. StrictModeの変更
+開発中に Strict Mode で二重レンダーが発生した際、useMemo と useCallback は 1 回目のレンダー時にメモ化された結果を 2 回目のレンダーで再利用します。
+
+### 2. Suspenseの改善
+React 19 では、コンポーネントがサスペンドした際には兄弟ツリー全体のレンダーを待たずに、直近のサスペンスバウンダリのフォールバックを即座にコミットするようになります。
+
+この変更により：
+- サスペンスのフォールバックがより早く表示
+- サスペンドされたツリー内の遅延リクエストも事前に準備
+
+### 3. UMDビルドの削除
+テストとリリースプロセスの複雑性を軽減するため、React 19 からは UMD ビルドを生成しなくなります。
+
+script タグでReact 19を使用する場合：
+\`\`\`html
+<script type="module">
+import React from "https://esm.sh/react@19/?dev"
+import ReactDOMClient from "https://esm.sh/react-dom@19/client?dev"
+...
+</script>
+\`\`\`
+
+## TypeScript関連の変更
+
+### 1. refクリーンアップの必須化
+\`\`\`javascript
+// Before（修正前）
+<div ref={current => (instance = current)} />
+
+// After（修正後）
+<div ref={current => {instance = current}} />
+\`\`\`
+
+### 2. useRefの引数の必須化
+TypeScript と React の動作に関する長年の不満のひとつが useRef でした。今後 useRef には引数が必須になるよう型を変更することにしました。
+
+\`\`\`javascript
+// エラーになる
+useRef(); // @ts-expect-error: Expected 1 argument but saw none
+
+// 正しい使用法
+useRef(undefined);
+useRef(null);
+\`\`\`
+
+### 3. ReactElementの型変更
+React 要素が ReactElement として型付けされている場合、その props のデフォルトの型は any ではなく unknown になります。
+
+### 4. useReducerの型改善
+新しいベストプラクティスは、useReducer に型引数を渡さないことです。
+
+\`\`\`javascript
+// Before（修正前）
+useReducer<React.Reducer<State, Action>>(reducer)
+
+// After（修正後）
+useReducer(reducer)
+\`\`\`
+
+## Codemod（自動変換ツール）
+
+アップグレードを支援するため、codemod.com のチームと協力し、React 19 の新しい API やパターンにコードを自動的に更新するための codemod を公開しました。
+
+利用可能なcodemod：
+- \`react-codemod\`コマンドを使用
+- TypeScriptサポート
+- 複雑なコード移行の自動処理
+
+## 全変更点
+
+### その他の破壊的変更
+- **react-dom**: \`src\`と\`href\`でのJavaScript URLに対するエラー
+- **react-dom**: \`onRecoverableError\`から\`errorInfo.digest\`を削除
+- **react-dom**: 複数のunstable APIの削除
+- **react-is**: 非推奨メソッドの削除
+
+### その他の注目すべき変更
+- 同期・デフォルト・連続レーンのバッチ処理
+- レンダーフェーズでの無限更新ループの検出
+- SSR中のレイアウトエフェクト警告の削除
 
 ## まとめ
 
-React 19の新機能により、これまで以上にパフォーマンスの高いWebアプリケーションを構築できるようになりました。これらの機能を適切に組み合わせることで、ユーザーにとって快適で応答性の高いインターフェースを提供できます。
+React 19は多くの破壊的変更を含みますが、これらの変更は：
+1. **パフォーマンスの向上**
+2. **コードの簡素化**
+3. **開発体験の改善**
+4. **React の内部構造の整理**
 
-次回は、これらの機能を活用した実際のプロジェクト例について詳しく解説します。`,
-    date: "2025-01-15",
+を目的としています。ほとんどのアプリには影響が出ないことを予想していますが、段階的なアップグレードと十分なテストが推奨されます。
+
+`,
+    date: "2025-08-01",
     category: "React",
-    readTime: "10分",
-    tags: ["React", "React19", "フロントエンド", "パフォーマンス"],
+    readTime: "0分",
+    tags: ["React", "React19", "フロントエンド"],
     author: "Tech Writer",
     slug: "react-19-complete-guide",
-    publishedAt: "2025-01-15T09:00:00Z",
-    updatedAt: "2025-01-15T09:00:00Z",
-    views: 1250,
-    likes: 89
+    publishedAt: "2025-08-01T12:00:00Z",
+    updatedAt: "2025-08-01T12:00:00Z",
+    views: 0,
+    likes: 0
   },
   {
     id: 2,
@@ -374,15 +478,15 @@ ClassAttributes<HTMLElement> & HTMLAttributes<HTMLElement> & ExtraProps & { inli
 
 これらを **&** で結合することで、Reactコンポーネントとして必要な機能、HTMLの標準機能、ライブラリ固有の機能、そして独自の機能を、すべて型安全な状態で扱えるようになっているのです。
                      `,
-    date: "2025-01-15",
-    category: "Build Tools",
-    readTime: "12分",
+    date: "2025-08-18",
+    category: "React",
+    readTime: "0分",
     tags: ["React", "Tailwind CSS"],
     author: "Tech Writer",
     slug: "frontend-development",
-    publishedAt: "2025-08-18T14:00:00Z",
-    views: 734,
-    likes: 45
+    publishedAt: "2025-08-18T12:00:00Z",
+    views: 0,
+    likes: 0
   },
 ]
 

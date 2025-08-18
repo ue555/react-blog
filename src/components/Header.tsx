@@ -20,12 +20,12 @@ const Header: FC<HeaderProps> = ({ darkMode, toggleDarkMode }) => {
             </h1>
           </div>
 
-          <nav className="hidden md:flex items-center space-x-8">
+          {/*<nav className="hidden md:flex items-center space-x-8">
             <a href="#" className="hover:text-blue-500 transition-colors">Home</a>
             <a href="#" className="hover:text-blue-500 transition-colors">About</a>
             <a href="#" className="hover:text-blue-500 transition-colors">Archive</a>
             <a href="#" className="hover:text-blue-500 transition-colors">Contact</a>
-          </nav>
+          </nav>*/}
 
           <div className="flex items-center space-x-4">
             <button

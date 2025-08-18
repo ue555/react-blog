@@ -549,14 +549,14 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
                 <div className={`flex items-center gap-4 text-sm ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>
-                  <div className="flex items-center gap-1">
+                  {/*<div className="flex items-center gap-1">
                     <Eye size={14} />
                     <span>{post.views?.toLocaleString() || 0}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Heart size={14} />
                     <span>{likes}</span>
-                  </div>
+                  </div>*/}
                 </div>
               </div>
 
@@ -567,24 +567,25 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
               <div className={`flex flex-wrap items-center gap-4 text-sm ${
                 darkMode ? 'text-gray-400' : 'text-gray-600'
               }`}>
-                <div className="flex items-center gap-1">
+                {/*<div className="flex items-center gap-1">
                   <User size={14} />
                   <span>{post.author}</span>
-                </div>
+                </div>*/}
                 <div className="flex items-center gap-1">
                   <Calendar size={14} />
                   <span>{formatDate(post.date)}</span>
                 </div>
-                <div className="flex items-center gap-1">
+                {/*<div className="flex items-center gap-1">
                   <Clock size={14} />
                   <span>{post.readTime}</span>
-                </div>
+                </div>*/}
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-              <button
+            {/*<div className="flex items-center gap-3 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">*/}
+            <div className="flex items-center gap-3 border-b border-gray-200 dark:border-gray-700">
+              {/*<button
                 onClick={handleLike}
                 disabled={isPending}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
@@ -651,7 +652,7 @@ const ArticleDetail: FC<ArticleDetailProps> = ({
                     </button>
                   </div>
                 )}
-              </div>
+              </div>*/}
             </div>
 
             {/* Article Content */}

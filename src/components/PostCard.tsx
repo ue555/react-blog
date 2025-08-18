@@ -40,11 +40,11 @@ const PostCard: FC<PostCardProps> = memo(({ post, darkMode, onPostClick }) => {
             }`}>
               {post.category}
             </span>
-            <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            {/*<span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               {post.readTime}
-            </span>
+            </span>*/}
           </div>
-          <button
+          {/*<button
             onClick={handleLike}
             className={`p-1 rounded-full transition-all duration-200 ${
               optimisticLiked
@@ -56,7 +56,7 @@ const PostCard: FC<PostCardProps> = memo(({ post, darkMode, onPostClick }) => {
             aria-label="いいね"
           >
             <Heart size={16} fill={optimisticLiked ? 'currentColor' : 'none'} />
-          </button>
+          </button>*/}
         </div>
 
         <h3
