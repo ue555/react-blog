@@ -1,11 +1,12 @@
-import type { Post } from '../types'
+import type {Post} from '../types'
 
 export const posts: Post[] = [
   {
     id: 1,
     title: "React 19からの新機能を紹介します",
     excerpt: "React 19からの新機能を紹介します",
-    content: `# React 19の新機能を紹介します
+    content: `
+## はじめに
 
 React 19（2024年4月25日リリース）は、React開発に劇的な進化をもたらす新機能や安定化、最適化が多数導入されました。React 19の機能を紹介します。
 
@@ -261,6 +262,10 @@ React 19は多くの破壊的変更を含みますが、これらの変更は：
 
 を目的としています。ほとんどのアプリには影響が出ないことを予想していますが、段階的なアップグレードと十分なテストが推奨されます。
 
+## 参考
+
+- **React 19 アップグレードガイド**: [https://ja.react.dev/blog/2024/04/25/react-19-upgrade-guide](https://ja.react.dev/blog/2024/04/25/react-19-upgrade-guide)
+- **Changelog**: [https://github.com/facebook/react/blob/main/CHANGELOG.md#1900-december-5-2024](https://github.com/facebook/react/blob/main/CHANGELOG.md#1900-december-5-2024)
 `,
     date: "2025-08-01",
     category: "React",
@@ -275,67 +280,446 @@ React 19は多くの破壊的変更を含みますが、これらの変更は：
   },
   {
     id: 2,
-    title: "TypeScript 5.5の型システム進化",
-    excerpt: "TypeScript 5.5で追加された新しい型機能と、実践的な活用例を紹介します。",
-    content: `# TypeScript 5.5の型システム進化
+    title: "TypeScript 5.9の機能の紹介",
+    excerpt: "TypeScript 5.9の機能の紹介",
+    content: `
+## はじめに
 
-TypeScript 5.5では、型システムがさらに強力になり、開発者の生産性向上に大きく貢献する新機能が追加されました。
+TypeScript 5.9の新機能を記載順に具体例を挙げて解説します。(TypeScript 5.9の新機能詳細解説)
 
-## 新しい型機能
+## 1. 最小限で更新された \`tsc --init\`
 
-### Const Type Parameters
-\`\`\`typescript
-function createArray<const T>(items: readonly T[]): T[] {
-  return [...items]
+### 変更点
+従来の \`tsc --init\` は大量のコメントアウトされた設定で冗長でしたが、5.9では実用的で最小限の設定に変更されました。
+
+### 生成される設定例
+\`\`\`json
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    // File Layout
+    // "rootDir": "./src",
+    // "outDir": "./dist",
+
+    // Environment Settings
+    "module": "nodenext",
+    "target": "esnext",
+    "types": [],
+
+    // Other Outputs
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Recommended Options
+    "strict": true,
+    "jsx": "react-jsx",
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+  }
 }
-
-const numbers = createArray([1, 2, 3] as const) // type: readonly [1, 2, 3]
 \`\`\`
 
-### Improved Template Literal Types
-より柔軟なテンプレートリテラル型が利用可能になりました。
+### 実用的な改善点
+- **モジュール検出**: \`moduleDetection: "force"\` で全ファイルをモジュールとして扱う
+- **最新ES機能**: \`target: "esnext"\` で最新のECMAScript機能を使用可能
+- **JSX対応**: \`jsx: "react-jsx"\` でJSXユーザーの設定摩擦を軽減
+- **型制限**: \`types: []\` で不要な型定義ファイルの読み込みを制限
 
-## 実践的な活用例
+## 2. \`import defer\` のサポート
 
-実際のプロジェクトでこれらの新機能をどのように活用するか、具体例とともに解説します...`,
-    date: "2025-01-18",
+### 概要
+ECMAScriptの遅延モジュール評価提案をサポート。モジュールを読み込むが、実際のアクセスまで実行を遅延できます。
+
+### 基本的な使用例
+\`\`\`typescript
+// ./some-feature.ts
+initializationWithSideEffects();
+
+function initializationWithSideEffects() {
+  specialConstant = 42;
+  console.log("Side effects have occurred!");
+}
+
+export let specialConstant: number;
+\`\`\`
+
+\`\`\`typescript
+// メインファイル
+import defer * as feature from "./some-feature.js";
+
+// この時点では副作用は発生していない
+console.log("Module loaded but not executed");
+
+// specialConstantにアクセスした時点で初めて実行される
+console.log(feature.specialConstant); // 42
+// "Side effects have occurred!" がここで出力される
+\`\`\`
+
+### 構文の制限
+\`\`\`typescript
+// ❌ 許可されない構文
+import defer { doSomething } from "some-module";
+import defer defaultExport from "some-module";
+
+// ✅ サポートされる構文（名前空間インポートのみ）
+import defer * as feature from "some-module";
+\`\`\`
+
+### 実用例
+\`\`\`typescript
+// 条件付きで重い処理を行うモジュール
+import defer * as heavyComputation from "./heavy-computation.js";
+
+function processData(useAdvanced: boolean) {
+  if (useAdvanced) {
+    // 必要な時だけ重い処理モジュールが実行される
+    return heavyComputation.advancedProcess();
+  }
+  return simpleProcess();
+}
+\`\`\`
+
+### 制約事項
+- \`--module preserve\` または \`esnext\` でのみ動作
+- TypeScriptによる変換は行われない（ランタイムサポートが必要）
+
+## 3. \`--module node20\` のサポート
+
+### 新しいオプション
+Node.js v20の動作をモデル化した安定したモジュール設定オプションです。
+
+### 設定例
+\`\`\`json
+{
+  "compilerOptions": {
+    "module": "node20",
+    "moduleResolution": "node20"
+    // --target es2023 が暗黙的に設定される
+  }
+}
+\`\`\`
+
+### \`nodenext\` との違い
+\`\`\`typescript
+// node20: 安定した設定（将来変更されにくい）
+// target: es2023 を暗黙設定
+
+// nodenext: 常に最新（floating target: esnext）
+// 将来的な変更の可能性あり
+\`\`\`
+
+## 4. DOM APIのサマリー記述
+
+### 改善点
+DOM APIにMDNドキュメントベースの簡潔な説明が追加されました。
+
+### 例（ホバー時の表示）
+\`\`\`typescript
+// 従来: 単なるリンクのみ
+document.querySelector // MDNリンクのみ
+
+// 5.9以降: 説明付き
+document.querySelector // 指定されたセレクターにマッチする最初の要素を返します
+\`\`\`
+
+## 5. 展開可能なホバー（プレビュー）
+
+### 機能概要
+ホバーツールチップに \`+/-\` ボタンが追加され、型情報をより詳細に表示できます。
+
+### 使用例
+\`\`\`typescript
+interface Options {
+  color: string;
+  size: 'small' | 'medium' | 'large';
+  position: {
+    x: number;
+    y: number;
+  };
+}
+
+export function drawButton(options: Options): void {
+  // optionsにホバーすると:
+  // 初期状態: (parameter) options: Options
+  // +ボタンクリック後: 詳細な型情報が展開表示
+}
+\`\`\`
+
+### ビフォー・アフター
+\`\`\`typescript
+// 従来のホバー表示
+(parameter) options: Options
+
+// 展開後の表示（+ボタンクリック）
+(parameter) options: {
+  color: string;
+  size: 'small' | 'medium' | 'large';
+  position: {
+    x: number;
+    y: number;
+  };
+}
+\`\`\`
+
+## 6. 設定可能なホバー最大長
+
+### 設定方法
+VS Codeの設定で調整可能：
+
+\`\`\`json
+{
+  "js/ts.hover.maximumLength": 2000
+}
+\`\`\`
+
+### 改善点
+- デフォルトのホバー長が大幅に増加
+- より多くの情報がホバーで表示される
+- 重要な情報が切り取られることが減少
+
+## 7. パフォーマンス最適化
+
+### マッパーでのインスタンス化キャッシュ
+\`\`\`typescript
+// Zod、tRPCなどの複雑なライブラリでの改善例
+type ComplexType<T> = {
+  [K in keyof T]: T[K] extends string ? \`processed_\${T[K]}\` : T[K]
+}
+
+// 5.9以前: 同じ中間型を何度も再インスタンス化
+// 5.9以降: 中間インスタンス化をキャッシュして効率化
+\`\`\`
+
+### ファイル存在チェックの最適化
+\`\`\`typescript
+// 最適化前のコード例（概念的）
+files.forEach(file => {
+  if (fileExists(file)) { // 毎回新しい関数オブジェクトを作成
+    processFile(file);
+  }
+});
+
+// 最適化後: 約11%の速度向上
+\`\`\`
+
+## 8. 重要な動作変更
+
+### lib.d.ts の変更
+\`\`\`typescript
+// ArrayBufferの型階層変更により新しいエラー
+let buffer: Buffer;
+let arrayBuffer: ArrayBuffer;
+
+// エラー例
+// error TS2322: Type 'Buffer' is not assignable to type 'ArrayBuffer'.
+
+// 解決策1: より具体的な型指定
+let data: Uint8Array<ArrayBuffer> = new Uint8Array([0, 1, 2, 3, 4]);
+
+// 解決策2: .bufferプロパティの使用
+let data = new Uint8Array([0, 1, 2, 3, 4]);
+someFunc(data.buffer); // data.bufferを使用
+\`\`\`
+
+### 型引数推論の変更
+\`\`\`typescript
+// 型変数のリーク修正により新しいエラーが発生する可能性
+function genericFunction<T>(value: T): T {
+  return value;
+}
+
+// 5.9では明示的な型引数が必要になる場合
+genericFunction<string>("hello"); // 明示的に型を指定
+\`\`\`
+
+### 移行対応
+\`\`\`bash
+# @types/nodeの更新
+npm update @types/node --save-dev
+
+# 型エラーの修正
+# 1. より具体的な型指定
+# 2. .bufferプロパティの使用
+# 3. 明示的な型引数の追加
+\`\`\`
+
+## まとめ
+
+TypeScript 5.9は開発者体験の向上に重点を置いた改善が多く含まれています：
+
+- **開発効率**: 展開可能なホバー、改良されたtsconfig.json
+- **パフォーマンス**: キャッシュ最適化、ファイル操作の高速化
+- **新機能**: import defer、node20モジュール
+- **開発者体験**: DOM API説明、設定可能なホバー長
+
+これらの機能により、より快適で効率的なTypeScript開発が可能になります。
+
+## 参考
+
+- **TypeScript 5.9**: [https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-9.html#expandable-hovers-preview](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-9.html#expandable-hovers-preview)
+`,
+    date: "2025-08-10",
     category: "TypeScript",
-    readTime: "8分",
+    readTime: "0分",
     tags: ["TypeScript", "型安全性", "JavaScript"],
     author: "Tech Writer",
-    slug: "typescript-5-5-type-system",
-    publishedAt: "2025-01-18T10:00:00Z",
-    views: 892,
-    likes: 67
+    slug: "typescript-5-9-type-system",
+    publishedAt: "2025-08-10T12:00:00Z",
+    views: 0,
+    likes: 0
   },
   {
     id: 3,
-    title: "Vite 6.0で変わるフロントエンド開発",
-    excerpt: "Vite 6.0の新機能とパフォーマンス改善について、実際のプロジェクトでの活用例とともに解説。",
-    content: `# Vite 6.0で変わるフロントエンド開発
+    title: "Viteの仕組みと利用方法について説明します",
+    excerpt: "Viteの仕組みと利用方法について説明します",
+    content: `
+## はじめに
 
-Vite 6.0では、開発体験とビルドパフォーマンスが大幅に向上しました。
+**Vite**は、フロントエンド開発向けの超高速ビルドツール兼開発サーバーです。Vue.js開発者のEvan You氏によって開発され、2020年4月に初リリースされました。
 
-## 主な新機能
+- Node.js上で動作します。Node.js 18+または20+が推奨されています。
+- Vite自体はNode.js上で動作するビルドツール（Node.jsはランタイム環境で、Viteはその上で動作するアプリケーション）
 
-### 改善されたHMR
-ホットモジュールリプレースメントがさらに高速化され、大規模プロジェクトでも瞬時に反映されます。
+## Viteの特徴
 
-### 新しいプラグインAPI
-より柔軟で強力なプラグインシステムが導入されました。
+### 1. 開発時の革新的なアプローチ
 
-## パフォーマンス改善
+Viteの最大の特徴は、**「開発時はバンドルしない」** ことです。従来のWebpackやRollupなどのツールは開発時にも全ファイルをバンドルしますが、Viteは**ES Modules**（ESM）を活用し、必要なファイルのみを都度変換・配信します。
 
-実際のベンチマーク結果とともに、Vite 6.0のパフォーマンス向上について詳しく解説します...`,
-    date: "2025-01-15",
+具体的には：
+- ブラウザがモジュールを要求した時点で、そのモジュールのみをトランスパイル
+- 依存関係も必要に応じて動的に解決
+- これにより初回起動が劇的に高速化
+- 大規模プロジェクトでも高速な起動と更新が可能
+
+### 2. Hot Module Replacement (HMR)
+
+開発サーバーでは、ブラウザがアクセスする度に対象モジュールのみコンパイルして返すため、ビルドの待ち時間が大幅に減少します。また、**HMR（Hot Module Replacement）**に対応しており：
+
+- ファイル変更時に変更部分だけを即座に差し替え、ブラウザ表示に反映
+- Vue SFCの場合、テンプレート・スクリプト・スタイルを個別に更新可能
+- React Fast Refreshにも対応
+- 状態を保持したまま更新されるため、開発効率が大幅向上
+
+### 3. プロダクションビルド
+
+プロダクションビルド時は、Rollupを利用し全体を最適化・バンドルします。以下の最適化も自動で行われます：
+
+- コード分割（Code Splitting）
+- Tree Shaking（不要コードの除去）
+- アセット最適化
+
+## 対応フレームワーク
+
+現在のViteは以下をサポート：
+- Vanilla JavaScript/TypeScript
+- Vue 3
+- React
+- Svelte
+- Lit
+- Preact
+など、幅広いフレームワークに対応
+
+## Viteの利用方法
+
+### 1. Node.jsをインストール
+
+公式推奨はNode.jsの18以上。バージョン確認は以下のコマンドで可能：
+
+\`\`\`bash
+node -v
+\`\`\`
+
+### 2. 新規プロジェクト作成
+
+ターミナルで以下を実行します（好きなディレクトリでOK）：
+
+\`\`\`bash
+npm create vite@latest
+\`\`\`
+
+指示に従ってプロジェクト名や使いたいフレームワーク（例: Vanilla, Vue, React, Svelteなど）、TypeScript/JavaScriptの選択を行います。
+
+### 3. 依存パッケージのインストール
+
+\`\`\`bash
+cd 作成したプロジェクト名
+npm install
+\`\`\`
+
+で必要なモジュールがインストールされます。
+
+### 4. 開発サーバー起動
+
+\`\`\`bash
+npm run dev
+\`\`\`
+
+ローカル開発サーバーが立ち上がるので、案内されたURLをブラウザで開けば成果物が表示されます。
+
+### 5. 本番用ビルド
+
+\`\`\`bash
+npm run build
+\`\`\`
+
+でプロダクション向けに最適化された静的ファイルを\`dist\`フォルダなどに出力します。
+
+## 生成される主なディレクトリ構成例
+
+\`\`\`
+├── node_modules
+├── public
+│   └── vite.svg
+├── .gitignore
+├── counter.js
+├── index.html
+├── javascript.svg
+├── main.js
+├── package-lock.json
+├── package.json
+├── style.css
+└── vite.config.js  # 設定ファイル（詳細設定が可能）
+\`\`\`
+
+## まとめ
+
+### 特徴
+- 超高速な開発体験
+- Hot Module Replacement
+- 必要最小限のバンドル
+- 効率的な本番ビルド
+
+### 利用手順
+1. Node.jsインストール
+2. プロジェクト作成
+3. パッケージインストール
+4. 開発/ビルドコマンド実行
+
+### 仕組み
+- ESMを活用し、開発時は都度コンパイル
+- ビルド時にはRollupで最適化
+
+Viteは、現代のフロントエンド開発において必須クラスのツールとなっています。Vue/React/Svelte/Vanillaなど幅広く対応しており、爆速開発を実現したい方には特におすすめです。
+
+`,
+    date: "2025-08-15",
     category: "Build Tools",
-    readTime: "12分",
+    readTime: "0分",
     tags: ["Vite", "ビルドツール", "パフォーマンス"],
     author: "Tech Writer",
-    slug: "vite-6-frontend-development",
-    publishedAt: "2025-01-15T14:00:00Z",
-    views: 734,
-    likes: 45
+    slug: "frontend-development",
+    publishedAt: "2025-08-15T12:00:00Z",
+    views: 0,
+    likes: 0
   },
   {
     id: 4,
